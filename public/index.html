@@ -27,13 +27,13 @@
   #authCard h3{margin:0 0 10px 0;color:#007bff}
   .mutedSmall{font-size:13px;color:#666;margin-top:8px}
   canvas{margin-top:18px;height:350px!important}
+  .action-btn{background:#f8f9fa;border:1px solid #ddd;padding:6px 8px;border-radius:6px;cursor:pointer}
 </style>
 </head>
 <body>
 <header>Traffic Monitoring Dashboard<button id="logoutBtn">Logout</button></header>
 
 <main>
-  <!-- AUTH CARD -->
   <div id="authCard">
     <h3>Sign In / Sign Up</h3>
 
@@ -75,7 +75,6 @@
     </div>
   </div>
 
-  <!-- DASHBOARD (hidden until auth) -->
   <div id="dashboard" style="display:none">
     <div style="display:flex;gap:10px;align-items:center">
       <input id="location" placeholder="Location" style="flex:1"/>
@@ -98,7 +97,9 @@
     const token = localStorage.getItem("token");
     opts.headers = opts.headers || {};
     if (token) opts.headers["Authorization"] = "Bearer " + token;
-    return fetch(path, opts).then(r=>r.json());
+    return fetch(path, opts).then(async r => {
+      try { return await r.json(); } catch { return {}; }
+    });
   }
 
   const methodSel = document.getElementById("method");
@@ -128,12 +129,11 @@
     }
   };
 
-  // Password sign up / login (simple)
+  // Password sign up / login
   paSignup.onclick = async () => {
     const id = paIdentifier.value.trim();
     const pwd = paPassword.value.trim();
     if (!id || !pwd) return alert("Provide identifier and password");
-    // decide whether email or mobile
     const payload = {};
     if (id.includes("@")) payload.email = id; else payload.mobile = id;
     payload.password = pwd;
@@ -144,9 +144,7 @@
     const id = paIdentifier.value.trim();
     const pwd = paPassword.value.trim();
     if (!id || !pwd) return alert("Provide identifier and password");
-    const payload = {};
-    if (id.includes("@")) payload.email = id; else payload.mobile = id;
-    payload.password = pwd;
+    const payload = { identifier: id, password: pwd };
     const res = await api("/api/login", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
     if (res.success && res.token) {
       localStorage.setItem("token", res.token);
@@ -176,9 +174,6 @@
     if (res.success && res.token) {
       localStorage.setItem("token", res.token);
       showDashboard();
-    } else if (res.success && res.token === undefined && res.token === null) {
-      // some server may return token under different field - handle standard case above
-      alert(res.message || "OTP verified, but token missing");
     } else {
       alert(res.message || "OTP verify failed");
     }
@@ -186,7 +181,6 @@
 
   // Google button placeholder
   googleBtn.onclick = () => {
-    // If you configure Google OAuth on server, open /auth/google
     window.location.href = "/auth/google";
   };
 
@@ -212,7 +206,6 @@
   async function loadData(){
     const res = await api("/api/traffic");
     if (!res || res.success === false) {
-      // probably unauthorized — show auth
       document.getElementById("authCard").style.display = "block";
       dashboard.style.display = "none";
       logoutBtn.style.display = "none";
@@ -276,17 +269,14 @@
     chart = new Chart(ctx, { type:"bar", data:{ labels, datasets:[{ label:"Vehicle Count", data:values, backgroundColor:"rgba(54,162,235,0.6)"}] }, options:{ responsive:true, scales:{ y:{ beginAtZero:true } } }});
   }
 
-  // On load: if token exists try to show dashboard
   (async ()=>{
     const token = localStorage.getItem("token");
     if (token) {
-      // test token by fetching data
       const res = await api("/api/traffic");
-      if (res && res.length !== undefined) showDashboard();
+      if (res && Array.isArray(res)) showDashboard();
       else { localStorage.removeItem("token"); document.getElementById("authCard").style.display="block"; }
     }
   })();
-
 </script>
 </body>
 </html>
