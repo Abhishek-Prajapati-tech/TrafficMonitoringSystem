@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Traffic Monitoring Dashboard</title>
+
+  <!-- ✅ Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f2f5f9;
+      color: #333;
+    }
+
+    header {
+      background: #007bff;
+      color: white;
+      text-align: center;
+      padding: 1rem 0;
+      font-size: 1.5rem;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    input, button {
+      padding: 0.7rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    input {
+      flex: 1;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.8rem;
+      text-align: center;
+    }
+
+    th {
+      background: #007bff;
+      color: white;
+    }
+
+    canvas {
+      margin-top: 2rem;
+      width: 100% !important;
+      height: 400px !important;
+    }
+  </style>
+</head>
+<body>
+  <header>Traffic Monitoring Dashboard</header>
+
+  <main>
+    <form id="trafficForm">
+      <input type="text" id="location" placeholder="Enter location" required />
+      <input type="number" id="vehicleCount" placeholder="Vehicle count" required />
+      <button type="submit">Add Data</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Location</th>
+          <th>Vehicle Count</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody id="dataTable"></tbody>
+    </table>
+
+    <canvas id="trafficChart"></canvas>
+  </main>
+
+  <script>
+    const form = document.getElementById("trafficForm");
+    const dataTable = document.getElementById("dataTable");
+    let chart;
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const location = document.getElementById("location").value;
+      const vehicleCount = document.getElementById("vehicleCount").value;
+
+      await fetch("/api/traffic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ location, vehicleCount }),
+      });
+
+      form.reset();
+      loadData();
+    });
+
+    async function loadChart() {
+      const res = await fetch("/api/traffic");
+      const data = await res.json();
+
+      const labels = data.map(d => d.location);
+      const values = data.map(d => d.vehicleCount);
+
+      const ctx = document.getElementById("trafficChart").getContext("2d");
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label: "Vehicle Count",
+            data: values,
+            backgroundColor: "rgba(54, 162, 235, 0.6)"
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    async function loadData() {
+      const res = await fetch("/api/traffic");
+      const data = await res.json();
+      dataTable.innerHTML = data
+        .map(
+          (d) => `
+          <tr>
+            <td>${d.location}</td>
+            <td>${d.vehicleCount}</td>
+            <td>${new Date(d.timestamp).toLocaleString()}</td>
+          </tr>`
+        )
+        .join("");
+      
+      loadChart(); // ✅ Update chart automatically
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
