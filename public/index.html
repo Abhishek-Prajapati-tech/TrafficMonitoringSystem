@@ -1,183 +1,292 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Traffic Monitoring Dashboard</title>
-
-  <!-- ✅ Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f2f5f9;
-      color: #333;
-    }
-
-    header {
-      background: #007bff;
-      color: white;
-      text-align: center;
-      padding: 1rem 0;
-      font-size: 1.5rem;
-      font-weight: bold;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    }
-
-    main {
-      max-width: 900px;
-      margin: 2rem auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    }
-
-    form {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    input, button {
-      padding: 0.7rem;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
-    }
-
-    input {
-      flex: 1;
-    }
-
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    button:hover {
-      background: #0056b3;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-
-    th, td {
-      border: 1px solid #ccc;
-      padding: 0.8rem;
-      text-align: center;
-    }
-
-    th {
-      background: #007bff;
-      color: white;
-    }
-
-    canvas {
-      margin-top: 2rem;
-      width: 100% !important;
-      height: 400px !important;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Traffic Monitoring — Auth + OTP</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body{font-family:Arial;margin:0;background:#eef2f5;color:#222}
+  header{background:#007bff;color:#fff;padding:12px 16px;font-weight:700;position:relative}
+  #logoutBtn{position:absolute;right:16px;top:8px;background:#28a745;color:#fff;border:none;padding:6px 10px;border-radius:6px;display:none;cursor:pointer}
+  main{max-width:900px;margin:24px auto;background:#fff;padding:20px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  input,button,select{padding:10px;border-radius:6px;border:1px solid #ccc;font-size:14px}
+  button{background:#007bff;color:#fff;border:none;cursor:pointer}
+  .small{width:140px}
+  .muted{color:#666;font-size:13px}
+  table{width:100%;border-collapse:collapse;margin-top:16px}
+  th,td{padding:8px;border:1px solid #eee;text-align:center}
+  th{background:#007bff;color:#fff}
+  .menu-btn{cursor:pointer}
+  .menu{position:relative;display:inline-block}
+  .menu-content{display:none;position:absolute;right:0;background:#fff;border:1px solid #ddd;border-radius:6px;min-width:110px;z-index:10}
+  .menu-content button{display:block;width:100%;padding:8px;border:none;background:none;text-align:left;cursor:pointer}
+  .menu-content button:hover{background:#f6f6f6}
+  #authCard{width:360px;margin:20px auto;padding:18px;border-radius:8px;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,0.06)}
+  #authCard h3{margin:0 0 10px 0;color:#007bff}
+  .mutedSmall{font-size:13px;color:#666;margin-top:8px}
+  canvas{margin-top:18px;height:350px!important}
+</style>
 </head>
 <body>
-  <header>Traffic Monitoring Dashboard</header>
+<header>Traffic Monitoring Dashboard<button id="logoutBtn">Logout</button></header>
 
-  <main>
-    <form id="trafficForm">
-      <input type="text" id="location" placeholder="Enter location" required />
-      <input type="number" id="vehicleCount" placeholder="Vehicle count" required />
-      <button type="submit">Add Data</button>
-    </form>
+<main>
+  <!-- AUTH CARD -->
+  <div id="authCard">
+    <h3>Sign In / Sign Up</h3>
+
+    <div style="margin-bottom:8px;">
+      <label class="muted">Choose method:</label><br>
+      <select id="method">
+        <option value="email">Email (OTP)</option>
+        <option value="sms">Mobile (OTP)</option>
+        <option value="password">Password (Email/Mobile)</option>
+      </select>
+    </div>
+
+    <div id="passwordBlock" style="display:none;">
+      <input id="paIdentifier" placeholder="Email or Mobile" style="width:100%;margin-bottom:8px"/>
+      <input id="paPassword" placeholder="Password" type="password" style="width:100%;margin-bottom:8px"/>
+      <div class="row">
+        <button id="paLogin">Login</button>
+        <button id="paSignup" style="background:#28a745">Sign Up</button>
+      </div>
+      <div class="mutedSmall">Or use OTP below</div>
+    </div>
+
+    <div id="otpBlock">
+      <input id="identifier" placeholder="Enter email or mobile (with +country)" style="width:100%;margin-bottom:8px" />
+      <div class="row">
+        <button id="sendOtp">Send OTP</button>
+        <button id="showOtpInput" style="background:#6c757d">I have OTP</button>
+      </div>
+      <div style="margin-top:8px">
+        <button id="googleBtn" style="background:#db4437">Sign in with Google</button>
+      </div>
+
+      <div id="otpInput" style="display:none;margin-top:8px;">
+        <input id="otpCode" placeholder="Enter OTP" style="width:60%;display:inline-block"/>
+        <button id="verifyOtp" style="width:35%;display:inline-block">Verify</button>
+      </div>
+
+      <p id="authMsg" class="mutedSmall"></p>
+    </div>
+  </div>
+
+  <!-- DASHBOARD (hidden until auth) -->
+  <div id="dashboard" style="display:none">
+    <div style="display:flex;gap:10px;align-items:center">
+      <input id="location" placeholder="Location" style="flex:1"/>
+      <input id="vehicleCount" placeholder="Count" type="number" style="width:120px"/>
+      <button id="saveBtn">Save</button>
+    </div>
 
     <table>
-      <thead>
-        <tr>
-          <th>Location</th>
-          <th>Vehicle Count</th>
-          <th>Timestamp</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Location</th><th>Count</th><th>Time</th><th>⋮</th></tr></thead>
       <tbody id="dataTable"></tbody>
     </table>
 
     <canvas id="trafficChart"></canvas>
-  </main>
+  </div>
+</main>
 
-  <script>
-    const form = document.getElementById("trafficForm");
-    const dataTable = document.getElementById("dataTable");
-    let chart;
+<script>
+  // helper
+  function api(path, opts={}) {
+    const token = localStorage.getItem("token");
+    opts.headers = opts.headers || {};
+    if (token) opts.headers["Authorization"] = "Bearer " + token;
+    return fetch(path, opts).then(r=>r.json());
+  }
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const location = document.getElementById("location").value;
-      const vehicleCount = document.getElementById("vehicleCount").value;
+  const methodSel = document.getElementById("method");
+  const passwordBlock = document.getElementById("passwordBlock");
+  const otpBlock = document.getElementById("otpBlock");
+  const paLogin = document.getElementById("paLogin");
+  const paSignup = document.getElementById("paSignup");
+  const paIdentifier = document.getElementById("paIdentifier");
+  const paPassword = document.getElementById("paPassword");
+  const identifier = document.getElementById("identifier");
+  const sendOtp = document.getElementById("sendOtp");
+  const showOtpInput = document.getElementById("showOtpInput");
+  const otpInput = document.getElementById("otpInput");
+  const verifyOtp = document.getElementById("verifyOtp");
+  const otpCode = document.getElementById("otpCode");
+  const authMsg = document.getElementById("authMsg");
+  const googleBtn = document.getElementById("googleBtn");
 
-      await fetch("/api/traffic", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ location, vehicleCount }),
-      });
+  methodSel.onchange = () => {
+    const v = methodSel.value;
+    if (v === "password") {
+      passwordBlock.style.display = "block";
+      otpBlock.style.display = "none";
+    } else {
+      passwordBlock.style.display = "none";
+      otpBlock.style.display = "block";
+    }
+  };
 
-      form.reset();
-      loadData();
+  // Password sign up / login (simple)
+  paSignup.onclick = async () => {
+    const id = paIdentifier.value.trim();
+    const pwd = paPassword.value.trim();
+    if (!id || !pwd) return alert("Provide identifier and password");
+    // decide whether email or mobile
+    const payload = {};
+    if (id.includes("@")) payload.email = id; else payload.mobile = id;
+    payload.password = pwd;
+    const res = await api("/api/signup", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+    alert(res.message || (res.success ? "Account created" : "Error"));
+  };
+  paLogin.onclick = async () => {
+    const id = paIdentifier.value.trim();
+    const pwd = paPassword.value.trim();
+    if (!id || !pwd) return alert("Provide identifier and password");
+    const payload = {};
+    if (id.includes("@")) payload.email = id; else payload.mobile = id;
+    payload.password = pwd;
+    const res = await api("/api/login", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+    if (res.success && res.token) {
+      localStorage.setItem("token", res.token);
+      showDashboard();
+    } else alert(res.message || "Login failed");
+  };
+
+  // Send OTP
+  sendOtp.onclick = async () => {
+    const to = identifier.value.trim();
+    if (!to) return alert("Enter email or mobile (with +country)");
+    const type = to.includes("@") ? "email" : "sms";
+    authMsg.textContent = "Sending OTP...";
+    const res = await api("/api/send-otp", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ to, type }) });
+    authMsg.textContent = res.message || (res.success ? "OTP sent" : "Error sending OTP");
+    if (res.success) otpInput.style.display = "block";
+  };
+
+  showOtpInput.onclick = () => otpInput.style.display = "block";
+
+  // Verify OTP
+  verifyOtp.onclick = async () => {
+    const to = identifier.value.trim();
+    const code = otpCode.value.trim();
+    if (!to || !code) return alert("Provide both");
+    const res = await api("/api/verify-otp", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ to, code }) });
+    if (res.success && res.token) {
+      localStorage.setItem("token", res.token);
+      showDashboard();
+    } else if (res.success && res.token === undefined && res.token === null) {
+      // some server may return token under different field - handle standard case above
+      alert(res.message || "OTP verified, but token missing");
+    } else {
+      alert(res.message || "OTP verify failed");
+    }
+  };
+
+  // Google button placeholder
+  googleBtn.onclick = () => {
+    // If you configure Google OAuth on server, open /auth/google
+    window.location.href = "/auth/google";
+  };
+
+  // Dashboard logic
+  const logoutBtn = document.getElementById("logoutBtn");
+  const dashboard = document.getElementById("dashboard");
+  const saveBtn = document.getElementById("saveBtn");
+  const dataTable = document.getElementById("dataTable");
+  let chart;
+
+  logoutBtn.onclick = () => {
+    localStorage.removeItem("token");
+    location.reload();
+  };
+
+  async function showDashboard(){
+    document.getElementById("authCard").style.display = "none";
+    dashboard.style.display = "block";
+    logoutBtn.style.display = "inline-block";
+    loadData();
+  }
+
+  async function loadData(){
+    const res = await api("/api/traffic");
+    if (!res || res.success === false) {
+      // probably unauthorized — show auth
+      document.getElementById("authCard").style.display = "block";
+      dashboard.style.display = "none";
+      logoutBtn.style.display = "none";
+      return;
+    }
+    const data = Array.isArray(res) ? res : res.data || [];
+    dataTable.innerHTML = "";
+    data.forEach(d => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${d.location}</td><td>${d.vehicleCount}</td><td>${new Date(d.timestamp).toLocaleString()}</td>
+        <td class="menu">
+          <span class="menu-btn">⋮</span>
+          <div class="menu-content">
+            <button onclick="editData('${d._id}','${d.location}',${d.vehicleCount})">Edit</button>
+            <button onclick="deleteData('${d._id}')">Delete</button>
+          </div>
+        </td>`;
+      dataTable.appendChild(tr);
     });
 
-    async function loadChart() {
-      const res = await fetch("/api/traffic");
-      const data = await res.json();
+    // attach menu toggles
+    document.querySelectorAll(".menu-btn").forEach(btn => {
+      btn.onclick = (e) => {
+        const content = e.target.parentElement.querySelector(".menu-content");
+        content.style.display = content.style.display === "block" ? "none" : "block";
+      };
+    });
 
-      const labels = data.map(d => d.location);
-      const values = data.map(d => d.vehicleCount);
+    // chart
+    updateChart(data);
+  }
 
-      const ctx = document.getElementById("trafficChart").getContext("2d");
-      if (chart) chart.destroy();
+  // Save new traffic
+  saveBtn.onclick = async () => {
+    const location = document.getElementById("location").value.trim();
+    const vehicleCount = Number(document.getElementById("vehicleCount").value);
+    if (!location || !vehicleCount) return alert("Provide values");
+    const res = await api("/api/traffic", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ location, vehicleCount }) });
+    if (res.success) { document.getElementById("location").value=""; document.getElementById("vehicleCount").value=""; loadData(); } else alert(res.message || "Error");
+  };
 
-      chart = new Chart(ctx, {
-        type: "bar",
-        data: {
-          labels,
-          datasets: [{
-            label: "Vehicle Count",
-            data: values,
-            backgroundColor: "rgba(54, 162, 235, 0.6)"
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: { y: { beginAtZero: true } }
-        }
-      });
+  // Edit & Delete
+  window.editData = async (id, loc, cnt) => {
+    const newLoc = prompt("Location:", loc);
+    const newCount = prompt("Count:", cnt);
+    if (!newLoc || !newCount) return;
+    const res = await api("/api/traffic/"+id, { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ location:newLoc, vehicleCount:Number(newCount) }) });
+    if (res.success) loadData(); else alert(res.message || "Error");
+  };
+  window.deleteData = async (id) => {
+    if (!confirm("Delete?")) return;
+    const res = await api("/api/traffic/"+id, { method:"DELETE" });
+    if (res.success) loadData(); else alert(res.message || "Error");
+  };
+
+  function updateChart(data){
+    const labels = data.map(d => d.location);
+    const values = data.map(d => d.vehicleCount);
+    const ctx = document.getElementById("trafficChart").getContext("2d");
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, { type:"bar", data:{ labels, datasets:[{ label:"Vehicle Count", data:values, backgroundColor:"rgba(54,162,235,0.6)"}] }, options:{ responsive:true, scales:{ y:{ beginAtZero:true } } }});
+  }
+
+  // On load: if token exists try to show dashboard
+  (async ()=>{
+    const token = localStorage.getItem("token");
+    if (token) {
+      // test token by fetching data
+      const res = await api("/api/traffic");
+      if (res && res.length !== undefined) showDashboard();
+      else { localStorage.removeItem("token"); document.getElementById("authCard").style.display="block"; }
     }
+  })();
 
-    async function loadData() {
-      const res = await fetch("/api/traffic");
-      const data = await res.json();
-      dataTable.innerHTML = data
-        .map(
-          (d) => `
-          <tr>
-            <td>${d.location}</td>
-            <td>${d.vehicleCount}</td>
-            <td>${new Date(d.timestamp).toLocaleString()}</td>
-          </tr>`
-        )
-        .join("");
-      
-      loadChart(); // ✅ Update chart automatically
-    }
-
-    loadData();
-  </script>
+</script>
 </body>
 </html>
